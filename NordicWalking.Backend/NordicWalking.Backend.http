@@ -1,0 +1,6 @@
+@NordicWalking.Backend_HostAddress = http://localhost:5191
+
+GET {{NordicWalking.Backend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
