@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Layout from './components/Layout';
 import tracksData from './data/tracks';
+import ElevationChart from './components/ElevationChart';
 
 function App() {
     const [selectedTrack, setSelectedTrack] = useState(null);
@@ -62,11 +63,11 @@ function App() {
                     {selectedTrack && (
                         <div className="h-64 bg-white border-t p-6 shadow-2xl z-10">
                             <div className="flex justify-between items-center mb-4">
-                                <h4 className="text-sm font-bold text-gray-700 uppercase tracking-widest">Profil wysokości</h4>
+                                <h4 className="text-sm font-bold text-gray-700 uppercase tracking-widest">Profil wysokości- przykładowe dane</h4>
                                 <div className="text-xs text-gray-400 italic">Dane z plików GPX</div>
                             </div>
                             <div className="h-40 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-300">
-                                Tu Chart Specialist wstawi wykres wysokości
+                                <ElevationChart trackData={selectedTrack.elevationData} />
                             </div>
                         </div>
                     )}
