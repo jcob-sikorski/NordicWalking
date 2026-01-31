@@ -6,6 +6,39 @@ import ElevationChart from './components/ElevationChart';
 function App() {
     const [selectedTrack, setSelectedTrack] = useState(null);
 
+    const [chartData, setChartData] = useState([]);
+
+    const handleTrackClick = (track) => {
+        setSelectedTrack(track);
+
+        setChartData([]);
+
+      
+        fetch(`https://localhost:7055/api/tracks/${track.slug}`)
+            .then(response => {
+                if (!response.ok) {
+                    console.log("Backend nie odpowiada. Zostawiam dummy data.");
+                    return null;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data) {
+
+                    //tylko dla wykresu
+                    const mappedData = data.map(p => ({
+                        distance: p.distance || p.Distance,
+                        elevation: p.elevation || p.Elevation
+                    }));
+                    setChartData(mappedData);
+                }
+            })
+            .catch(err => {
+                console.error("Błąd połączenia z API", err);
+
+            });
+    };
+
     return (
         <Layout>
             <div className="flex h-full flex-col md:flex-row">
@@ -20,7 +53,8 @@ function App() {
                         {tracksData.map((track) => (
                             <div
                                 key={track.slug}
-                                onClick={() => setSelectedTrack(track)}
+                                
+                                onClick={() => handleTrackClick(track)}
                                 className={`p-4 cursor-pointer transition-all border-b hover:bg-gray-50 ${
                                     selectedTrack?.slug === track.slug ? 'bg-green-50 border-l-4 border-l-green-600' : ''
                                 }`}
@@ -67,7 +101,8 @@ function App() {
                                 <div className="text-xs text-gray-400 italic">Dane z plików GPX</div>
                             </div>
                             <div className="h-40 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-300">
-                                <ElevationChart trackData={selectedTrack.elevationData} />
+                                {/* <ElevationChart trackData={selectedTrack.elevationData} />*/}
+                                <ElevationChart trackData={chartData} />
                             </div>
                         </div>
                     )}
