@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Layout from './components/Layout';
 import tracksData from './data/tracks';
 import ElevationChart from './components/ElevationChart';
+import Map from './components/Map';
 
 function App() {
     const [selectedTrack, setSelectedTrack] = useState(null);
@@ -86,11 +87,13 @@ function App() {
                 <main className="flex-1 flex flex-col relative bg-gray-100">
                     <div className="flex-1 relative">
                         {/* MIEJSCE NA MAPĘ */}
-                        <div className="absolute inset-0 flex items-center justify-center text-gray-400 italic">
-                            {selectedTrack
-                                ? `Ładowanie mapy dla: ${selectedTrack.name}...`
-                                : "Wybierz trasę z listy, aby zobaczyć mapę"}
-                        </div>
+                        {selectedTrack ? (
+                            <Map trackSlug={selectedTrack.slug} />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-gray-400 italic">
+                              <p>Wybierz trasę z listy, aby zobaczyć mapę</p>
+                            </div>
+                          )}
                     </div>
 
                     {/* MIEJSCE NA WYKRES */}

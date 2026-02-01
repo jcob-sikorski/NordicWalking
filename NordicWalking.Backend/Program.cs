@@ -16,9 +16,13 @@ app.UseSwaggerUI();
 app.UseCors("AllowAll");
 
 // Example Endpoint
-app.MapGet("/api/tracks", async () =>
+app.MapGet("/api/tracks/{fileName}", async (string fileName) =>
 {
-    var filePath = Path.Combine(app.Environment.ContentRootPath, "Data", "tracks.json");
+    var filePath = Path.Combine(app.Environment.ContentRootPath, "Data", $"{fileName}.json");
+    
+    if (!File.Exists(filePath)) 
+        return Results.NotFound(new { message = $"Track {fileName} not found" });
+
     var json = await File.ReadAllTextAsync(filePath);
     return Results.Content(json, "application/json");
 });
