@@ -1,0 +1,20 @@
+﻿[
+  {
+    "id": 1,
+    "name": "Trasa Leśna (Łatwa)",
+    "distance": "5.2 km",
+    "color": "green",
+    "description": "Przyjemna trasa dla początkujących.",
+    "coordinates": [],
+    "elevationData": []
+  },
+  {
+    "id": 2,
+    "name": "Wzgórza Północy (Trudna)",
+    "distance": "12.5 km",
+    "color": "red",
+    "description": "Wymagające podejścia, piękne widoki.",
+    "coordinates": [],
+    "elevationData": []
+  }
+]
