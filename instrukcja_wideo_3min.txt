@@ -1,0 +1,66 @@
+Rozszerzona Instrukcja Wideo: Nordic Walking App (9 Minut)
+
+Metadane
+Tytuł: Pełny Przegląd Techniczny: Budowa Systemu Analizy Tras GPX
+Czas trwania: ~9 minut
+Język: Polski
+Poziom: Zaawansowany / Programistyczny
+
+Scenariusz i Szczegółowy Plan Nagrania
+
+0:00 - 1:00 | Wstęp i Architektura Systemu
+Wizualizacja: Schemat blokowy (Frontend <-> API <-> File System) lub widok całej aplikacji.
+Narracja:
+"Cześć. W tym dogłębnym materiale przeanalizujemy od podszewki architekturę aplikacji 'Nordic Walking'. Nie jest to tylko prosta wizualizacja mapy, ale kompletny system full-stack.
+Projekt zrealizowano w architekturze klient-serwer.
+Po lewej stronie mamy Backend oparty na .NET 8, wykorzystujący Minimal API do błyskawicznej obsługi żądań. Co ciekawe, zrezygnowaliśmy tu z klasycznej relacyjnej bazy danych na rzecz 'File-System-As-A-Database', gdzie źródłem prawdy są surowe pliki GPX.
+Po prawej stronie stoi Frontend – nowoczesna aplikacja SPA (Single Page Application) napisana w React 19 z użyciem Vite, stylizowana za pomocą Tailwind CSS.
+Dziś pokażę Wam dokładnie, jak surowy XML z urządzenia GPS zamienia się w interaktywny wykres na ekranie."
+
+1:00 - 2:30 | Backend: Konfiguracja i Minimal API (Program.cs)
+Wizualizacja: Otwarty plik NordicWalking.Backend/Program.cs.
+Szczegóły techniczne do omówienia:
+
+* "Zacznijmy od wejścia do aplikacji. Używamy tu modelu Minimal API. Zobaczcie, jak zwięzły jest kod startowy."
+* "Linie konfiguracyjne CORS (builder.Services.AddCors): To krytyczny moment. Frontend działa na innym porcie (zazwyczaj 5173) niż Backend (5191). Bez polityki AllowAnyOrigin, przeglądarka zablokowałaby zapytania. To częsty błąd początkujących."
+* "Endpoint /api/tracks: Zauważcie, że nie mamy tu kontrolerów. Wszystko dzieje się w lambdzie. Skanujemy katalog GpxSources przy użyciu Directory.GetFiles. To podejście 'Hot-Reload' dla danych – wrzucasz plik na serwer i jest on natychmiast widoczny w API bez restartu aplikacji."
+* "Generowanie 'slugów': Nazwa pliku jest czyszczona i formatowana, aby służyć jako bezpieczny identyfikator URL."
+
+2:30 - 4:30 | Backend: Algorytmika Przetwarzania Danych (GpxConverter.cs)
+Wizualizacja: Otwarty plik NordicWalking.Backend/GpxConverter.cs.
+Szczegóły techniczne do omówienia:
+
+* "To jest mózg operacji. Klasa GpxConverter. Metoda Parse używa XDocument (LINQ to XML). Dlaczego? Bo jest szybsze i lżejsze niż pełna deserializacja obiektowa dla prostego wyciągania atrybutów lat i lon."
+* Obsługa Przestrzeni Nazw (Namespaces): "Zwróćcie uwagę na zmienną GpxNs. Pliki GPX mają specyficzną strukturę XML. Bez podania poprawnego namespace'a, parsowanie by się nie powiodło."
+* Matematyka (Wzór Haversine'a): "Metoda GetDistance. To czysta trygonometria sferyczna. Ziemia nie jest płaska, więc nie możemy użyć Pitagorasa. Obliczamy odległość po łuku wielkim, uwzględniając krzywiznę Ziemi. To kluczowe dla dokładnego podania długości trasy."
+* Downsampling (Metoda Downsample): "To najważniejsza optymalizacja w projekcie. Plik z 2-godzinnego spaceru może mieć 5000 punktów. Rysowanie tego na mapie 'zabiłoby' wydajność przeglądarki. Nasz algorytm redukuje tę liczbę do np. 200-500 punktów, wybierając co n-tą próbkę. Zachowujemy ogólny kształt, drastycznie redukując rozmiar JSON-a przesyłanego przez sieć."
+
+4:30 - 6:00 | Frontend: React Hooks i Zarządzanie Stanem (App.jsx)
+Wizualizacja: Plik NordicWalking.Frontend/src/App.jsx.
+Szczegóły techniczne do omówienia:
+
+* "Przechodzimy na frontend. App.jsx pełni rolę kontenera logicznego. Używamy tu hooków useState do przechowywania listy tras i aktualnie wybranej trasy."
+* "useEffect: Wywoływany raz przy starcie komponentu. Pobiera listę tras. Zwróćcie uwagę na sortowanie – backend zwraca listę w kolejności systemowej plików, więc frontend musi zadbać o posortowanie ich alfabetycznie dla lepszego UX."
+* "Funkcja handleTrackClick: To tutaj dzieje się magia po kliknięciu. Resetujemy stan wykresu i mapy, aby uniknąć wyświetlania starych danych podczas ładowania nowych (setChartData([])). Dopiero po sukcesie zapytania fetch, aktualizujemy stan główny."
+
+6:00 - 7:30 | Frontend: Wizualizacja Mapy (Leaflet & React-Leaflet)
+Wizualizacja: Plik components/MapComponent.jsx.
+Szczegóły techniczne do omówienia:
+
+* "Biblioteka Leaflet w środowisku React wymaga kilku trików. Zobaczcie ten fragment z L.Icon.Default.mergeOptions. Webpack i Vite często gubią ścieżki do domyślnych obrazków markerów. Ten kod naprawia ten znany problem."
+* "Komponent ChangeView: React-Leaflet jest reaktywny, ale sama mapa Leaflet jest imperatywna. Ten mały pomocniczy komponent nasłuchuje zmian w propsach bounds i wymusza na mapie metodę fitBounds. Dzięki temu, gdy zmieniamy trasę z Tatr na Mazury, mapa automatycznie przesuwa się i zoomuje w odpowiednie miejsce."
+
+7:30 - 8:30 | Frontend: Wykresy i UI (Recharts & Tailwind)
+Wizualizacja: Plik components/ElevationChart.jsx oraz layout w App.jsx.
+Szczegóły techniczne do omówienia:
+
+* "Do wykresu używamy Recharts. Jest to biblioteka oparta na SVG. Dane z API (które mogą mieć klucze PascalCase np. Elevation) są mapowane w App.jsx na format camelCase, który jest standardem w JS. To ważna warstwa abstrakcji."
+* "Stylizacja: Całość oparta na klasach utility Tailwind. Zamiast pisać osobne pliki CSS, definujemy layout bezpośrednio w JSX. Np. flex-col md:flex-row odpowiada za responsywność – na telefonie sidebar jest na górze, na desktopie z boku."
+
+8:30 - 9:00 | Podsumowanie i Wnioski
+Wizualizacja: Ponowny rzut oka na działającą aplikację.
+Narracja:
+
+* "Podsumowując, ten projekt pokazuje, jak w 9 minut zrozumieć przepływ danych od pliku fizycznego do piksela na ekranie."
+* "Mamy tu: wydajny backend .NET z matematycznymi obliczeniami, optymalizację danych przed wysłaniem oraz responsywny frontend reagujący na zmiany stanu."
+* "To solidna baza do rozbudowy o logowanie, zapisywanie własnych tras czy analizę tempa marszu. Dzięki za uwagę, kod znajdziecie w repozytorium!"

@@ -4,75 +4,54 @@ import ElevationChart from './components/ElevationChart';
 import MapComponent from './components/MapComponent';
 
 function App() {
-    const [tracks, setTracks] = useState([]);
-    const [selectedTrack, setSelectedTrack] = useState(null);
-    const [chartData, setChartData] = useState([]);
-    const [mapPoints, setMapPoints] = useState([]);
+    // --- STATE MANAGEMENT ---
+    const [tracks, setTracks] = useState([]);          // List of available track metadata
+    const [selectedTrack, setSelectedTrack] = useState(null); // The track currently being viewed
+    const [chartData, setChartData] = useState([]);    // Simplified {dist, ele} objects for the chart
+    const [mapPoints, setMapPoints] = useState([]);    // Full coordinate data for the Leaflet/Map view
 
+    // --- INITIALIZATION ---
     useEffect(() => {
         console.log("[Frontend] Initializing - fetching track list...");
+        // Fetch the directory listing from the .NET API
         fetch('http://localhost:5191/api/tracks')
             .then(res => res.json())
             .then(data => {
-                console.log("[Frontend] Received tracks list:", data);
-                console.log("[Frontend] Names before sort:", data.map(t => t.name));
-                
-                // Sort in alphabetical order (A-Z)
+                // Sort tracks alphabetically by name (A-Z) for a better UI experience
                 const sortedTracks = [...data].sort((a, b) => a.name.localeCompare(b.name));
-                
-                console.log("[Frontend] Names after sort:", sortedTracks.map(t => t.name));
                 setTracks(sortedTracks);
             })
             .catch(err => console.error("Error fetching tracks:", err));
     }, []);
 
+    // --- EVENT HANDLERS ---
     const handleTrackClick = (track) => {
-            console.log(`[Frontend] Clicked track: ${track.name} (${track.slug})`);
+        console.log(`[Frontend] Clicked track: ${track.name} (${track.slug})`);
 
-            setSelectedTrack(track);
+        setSelectedTrack(track);
+        setChartData([]); // Reset current views to show loading state
+        setMapPoints([]);
 
-            setChartData([]);
+        const url = `http://localhost:5191/api/tracks/${track.slug}`;
+        console.log(`[Frontend] Fetching detailed data: ${url}`);
 
-            setMapPoints([]);
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    console.error("Backend did not respond correctly.");
+                    return null;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data) {
+                    // 1. Update Map Data: Contains lat, lon, elevation, distance
+                    setMapPoints(data);
 
-    
-
-            const url = `http://localhost:5191/api/tracks/${track.slug}`;
-
-            console.log(`[Frontend] Fetching: ${url}`);
-
-          
-
-            fetch(url)
-
-                .then(response => {
-
-                    console.log(`[Frontend] Response received. Status: ${response.status}`);
-
-                    if (!response.ok) {
-
-                        console.log("Backend nie odpowiada. Zostawiam dummy data.");
-
-                        return null;
-
-                    }
-
-                    return response.json();
-
-                })
-
-                .then(data => {
-
-                    console.log(`[Frontend] Data parsed. Received ${data ? data.length : 0} records.`);
-
-                    if (data) {
-
-                        console.log("Raw API data:", data);
-
-                        setMapPoints(data);
-                    //tylko dla wykresu
+                    // 2. Prepare Chart Data: 
+                    // This mapping fixes the common "Case Sensitivity" issue between 
+                    // C# (PascalCase) and JS (camelCase) JSON serialization.
                     const mappedData = data.map(p => {
-                        // Handle both camelCase and PascalCase
                         const dist = p.distance !== undefined ? p.distance : p.Distance;
                         const ele = p.elevation !== undefined ? p.elevation : p.Elevation;
                         return {
@@ -80,13 +59,12 @@ function App() {
                             elevation: ele
                         };
                     });
-                    console.log("Mapped chart data:", mappedData);
                     
                     setChartData(mappedData);
                 }
             })
             .catch(err => {
-                console.error("Błąd połączenia z API", err);
+                console.error("API Connection Error", err);
             });
     };
 
@@ -94,7 +72,7 @@ function App() {
         <Layout>
             <div className="flex h-full flex-col md:flex-row">
 
-                {/* SIDEBAR */}
+                {/* --- SIDEBAR: TRACK LIST --- */}
                 <aside className="w-full md:w-80 bg-white border-r flex flex-col overflow-hidden">
                     <div className="p-4 border-b bg-gray-50">
                         <h2 className="font-semibold text-gray-700">Dostępne trasy ({tracks.length})</h2>
@@ -105,18 +83,22 @@ function App() {
                             <div
                                 key={track.slug}
                                 onClick={() => handleTrackClick(track)}
+                                // Dynamic classes: Highlight the active track in green
                                 className={`p-4 cursor-pointer transition-all border-b hover:bg-gray-50 ${
                                     selectedTrack?.slug === track.slug ? 'bg-green-50 border-l-4 border-l-green-600' : ''
                                 }`}
                             >
                                 <div className="flex justify-between items-start">
                                     <h3 className="font-bold text-gray-900">{track.name}</h3>
+                                    {/* Only show distance badge if data exists */}
                                     {track.distance > 0 && (
                                         <span className="text-xs font-medium px-2 py-1 bg-gray-100 rounded text-gray-600">
                                             {track.distance} km
                                         </span>
                                     )}
                                 </div>
+                                
+                                {/* Optional info: Time and Waypoints ("Przez") */}
                                 {track.time > 0 && <p className="text-xs text-gray-500 mt-1">Czas: ~{track.time} min</p>}
 
                                 {selectedTrack?.slug === track.slug && track.via && (
@@ -134,10 +116,10 @@ function App() {
                     </div>
                 </aside>
 
-                {/* MAIN AREA */}
+                {/* --- MAIN AREA: MAP & CHART --- */}
                 <main className="flex-1 flex flex-col relative bg-gray-100">
+                    {/* TOP HALF: THE MAP */}
                     <div className="flex-1 relative">
-                        {/* MIEJSCE NA MAPĘ */}
                         {selectedTrack && mapPoints.length > 0 ? (
                             <div className="absolute inset-0">
                                 <MapComponent points={mapPoints} />
@@ -151,7 +133,7 @@ function App() {
                         )}
                     </div>
 
-                    {/* MIEJSCE NA WYKRES */}
+                    {/* BOTTOM HALF: THE ELEVATION PROFILE */}
                     {selectedTrack && (
                         <div className="h-64 bg-white border-t p-6 shadow-2xl z-10">
                             <div className="flex justify-between items-center mb-4">
@@ -159,6 +141,7 @@ function App() {
                                 <div className="text-xs text-gray-400 italic">Dane z plików GPX</div>
                             </div>
                             <div className="h-40 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl text-gray-300 overflow-hidden relative">
+                                {/* Passing the sanitized {distance, elevation} array here */}
                                 <ElevationChart trackData={chartData} />
                             </div>
                         </div>
