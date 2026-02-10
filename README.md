@@ -2,7 +2,7 @@
 
 This repository contains the source code for the NordicWalking application, featuring a .NET 10 backend and a React (Vite) frontend.
 
-![Project Screenshot](https://ucarecdn.com/2c299c78-7f7c-431b-b43c-eee55af968e1/Screenshot20260203at55303PM.png)
+<img src="https://ucarecdn.com/2c299c78-7f7c-431b-b43c-eee55af968e1/Screenshot20260203at55303PM.png" alt="Project Screenshot" width="800">
 
 ## Prerequisites
 
